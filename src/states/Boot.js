@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import config from "../config";
 
 export default class extends Phaser.State {
 
@@ -9,8 +10,11 @@ export default class extends Phaser.State {
         this.stars = null;
         this.cursors = null;
         this.scoreText = null;
+        this.ground = null;
+        this.ledge0 = null;
+        this.ledge1 = null;
         this.score = 0;
-
+        this.offsetScale = 1;
     }
 
     preload() {
@@ -21,10 +25,24 @@ export default class extends Phaser.State {
 
     }
 
-    create() {
-        this.game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
-        this.game.scale.setMinMax(240,170,2880,1920);
+    getScale() {
+        let docElement = document.documentElement
+        let width = docElement.clientWidth;
+        let height = docElement.clientHeight;
+        let scaleX = width / config.gameWidth;
+        let scaleY = height / config.gameHeight;
+        if (scaleX >= scaleY)
+            return scaleY;
+        return scaleX;
+    }
 
+
+    create() {
+        this.game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+        // this.game.scale.pageAlignHorizontally = true;
+        this.offsetScale = this.getScale();
+
+        this.game.scale.onOrientationChange.add(this.onOrientationChange, this);
         //  We're going to be using physics, so enable the Arcade Physics system
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -38,27 +56,29 @@ export default class extends Phaser.State {
         this.platforms.enableBody = true;
 
         // Here we create the ground.
-        let ground = this.platforms.create(0, this.game.world.height - 64, 'ground');
+        this.ground = this.platforms.create(0, this.game.world.height - (64 * this.offsetScale), 'ground');
 
         //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-        ground.scale.setTo(2, 2);
+        this.ground.scale.setTo(2 * this.offsetScale, 2 * this.offsetScale);
 
         //  This stops it from falling away when you jump on it
-        ground.body.immovable = true;
-
+        this.ground.body.immovable = true;
+        this.ground.y = this.game.world.height - (64 * this.offsetScale);
         //  Now let's create two ledges
-        let ledge = this.platforms.create(400, 400, 'ground');
+        this.ledge0 = this.platforms.create(400 * this.offsetScale, 400 * this.offsetScale, 'ground');
+        this.ledge0.x = 400 * this.offsetScale;
+        this.ledge0.y = 400 * this.offsetScale;
+        this.ledge0.body.immovable = true;
 
+        this.ledge0.scale.setTo(this.offsetScale, this.offsetScale);
 
-        ledge.body.immovable = true;
+        this.ledge1 = this.platforms.create(-150 * this.offsetScale, 250 * this.offsetScale, 'ground');
 
-        ledge = this.platforms.create(-150, 250, 'ground');
-
-        ledge.body.immovable = true;
-
+        this.ledge1.body.immovable = true;
+        this.ledge1.scale.setTo(this.offsetScale, this.offsetScale);
         // The player and its settings
-        this.player = this.game.add.sprite(32, this.game.world.height - 150, 'dude');
-
+        this.player = this.game.add.sprite(32 * this.offsetScale, this.game.world.height - (150 * this.offsetScale), 'dude');
+        this.player.scale.setTo(this.offsetScale, this.offsetScale);
         //  We need to enable physics on the player
         this.game.physics.arcade.enable(this.player);
 
@@ -78,17 +98,16 @@ export default class extends Phaser.State {
         //  Here we'll create 12 of them evenly spaced apart
         for (let i = 0; i < 12; i++) {
             //  Create a star inside of the 'stars' group
-            let star = this.stars.create(i * 70, 0, 'star');
+            let star = this.stars.create(i * 70 * this.offsetScale, 0, 'star');
 
             //  Let gravity do its thing
             star.body.gravity.y = 6;
-
+            star.scale.setTo(this.offsetScale, this.offsetScale)
             //  This just gives each star a slightly random bounce value
             star.body.bounce.y = 0.7 + Math.random() * 0.2;
-            console.log(["star[",i,"].y = ",star.body.bounce.y].join(""));
         }
         this.cursors = this.game.input.keyboard.createCursorKeys();
-        this.scoreText = this.game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+        this.scoreText = this.game.add.text(16, 16, 'score: 0', {fontSize: '32px', fill: '#000'});
     }
 
     update() {
@@ -133,5 +152,29 @@ export default class extends Phaser.State {
         this.scoreText.text = 'Score: ' + this.score;
 
     }
+
+    onOrientationChange(scale, prevOrientation, wasIncorrect) {
+        this.offsetScale = this.getScale();
+
+        this.game.scale.setGameSize(config.gameWidth * this.offsetScale, config.gameHeight * this.offsetScale)
+        this.ground.scale.setTo(2 * this.offsetScale, 2 * this.offsetScale);
+        this.ground.y = this.game.world.height - (64 * this.offsetScale);
+        this.player.scale.setTo(this.offsetScale, this.offsetScale);
+        this.player.x = 32 * this.offsetScale;
+        this.player.y = this.game.world.height - (150 * this.offsetScale)
+        this.ledge0.scale.setTo(this.offsetScale, this.offsetScale);
+        this.ledge0.x = 400 * this.offsetScale;
+        this.ledge0.y = 400 * this.offsetScale;
+        this.ledge1.scale.setTo(this.offsetScale, this.offsetScale);
+        this.ledge1.x = -150 * this.offsetScale;
+        this.ledge1.y = 250 * this.offsetScale;
+        for (let i = 0; i < 12; i++) {
+            let star = this.stars.getAt(i);
+            star.x = i * 70 * this.offsetScale;
+            star.scale.setTo(this.offsetScale, this.offsetScale);
+        }
+        console.log(["scale = ", this.game.scale.width, this.game.scale.height, this.offsetScale].join(" "));
+    }
+
 
 }
