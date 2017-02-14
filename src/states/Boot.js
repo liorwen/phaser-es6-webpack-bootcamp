@@ -22,6 +22,8 @@ export default class extends Phaser.State {
     }
 
     create() {
+        this.game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
+        this.game.scale.pageAlignVertically = true;
         //  We're going to be using physics, so enable the Arcade Physics system
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
