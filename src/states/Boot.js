@@ -160,8 +160,8 @@ export default class extends Phaser.State {
         this.ground.scale.setTo(2 * this.offsetScale, 2 * this.offsetScale);
         this.ground.y = this.game.world.height - (64 * this.offsetScale);
         this.player.scale.setTo(this.offsetScale, this.offsetScale);
-        this.player.x = 32 * this.offsetScale;
-        this.player.y = this.game.world.height - (150 * this.offsetScale)
+        this.player.x *= this.offsetScale;
+        this.player.y *= this.offsetScale
         this.ledge0.scale.setTo(this.offsetScale, this.offsetScale);
         this.ledge0.x = 400 * this.offsetScale;
         this.ledge0.y = 400 * this.offsetScale;
@@ -171,6 +171,7 @@ export default class extends Phaser.State {
         for (let i = 0; i < 12; i++) {
             let star = this.stars.getAt(i);
             star.x = i * 70 * this.offsetScale;
+            star.y *= this.offsetScale;
             star.scale.setTo(this.offsetScale, this.offsetScale);
         }
         console.log(["scale = ", this.game.scale.width, this.game.scale.height, this.offsetScale].join(" "));
